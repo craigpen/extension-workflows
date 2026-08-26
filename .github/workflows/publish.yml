@@ -68,7 +68,9 @@ jobs:
 
       - name: Get version from package.json
         id: version
-        run: node -p "console.log('version=' + require('./package.json').version)" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Publish to Chrome Web Store
         if: inputs.publish_chrome
