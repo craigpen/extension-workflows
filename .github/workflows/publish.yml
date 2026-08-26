@@ -1,0 +1,135 @@
+name: Publish Extension to App Stores
+
+on:
+  workflow_call:
+    inputs:
+      extension_name:
+        description: "Name of the extension (for display/tagging)"
+        required: true
+        type: string
+      build_command:
+        description: "npm script to build the extension (default: build)"
+        required: false
+        type: string
+        default: "build"
+      chrome_zip_path:
+        description: "Path to Chrome ZIP file after build (default: dist/chrome-mv3)"
+        required: false
+        type: string
+        default: "dist/chrome-mv3"
+      firefox_zip_path:
+        description: "Path to Firefox ZIP file after build (default: dist/firefox)"
+        required: false
+        type: string
+        default: "dist/firefox"
+      edge_zip_path:
+        description: "Path to Edge ZIP file after build (default: dist/chrome-mv3)"
+        required: false
+        type: string
+        default: "dist/chrome-mv3"
+      publish_chrome:
+        description: "Publish to Chrome Web Store"
+        required: false
+        type: boolean
+        default: true
+      publish_firefox:
+        description: "Publish to Firefox Add-ons"
+        required: false
+        type: boolean
+        default: true
+      publish_edge:
+        description: "Publish to Edge Add-ons"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    name: Publish to App Stores
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # For creating GitHub releases
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: npm run ${{ inputs.build_command }}
+
+      - name: Get version from package.json
+        id: version
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Publish to Chrome Web Store
+        if: inputs.publish_chrome
+        uses: wdzeng/chrome-extension-upload@v1
+        with:
+          file-path: ${{ inputs.chrome_zip_path }}
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          publish: true
+        continue-on-error: true
+
+      - name: Publish to Firefox Add-ons
+        if: inputs.publish_firefox
+        uses: trmcnvn/firefox-addon@v1
+        with:
+          addon-guid: ${{ secrets.FIREFOX_ADDON_GUID }}
+          zip-file: ${{ inputs.firefox_zip_path }}
+          api-key: ${{ secrets.FIREFOX_API_KEY }}
+          api-secret: ${{ secrets.FIREFOX_API_SECRET }}
+        continue-on-error: true
+
+      - name: Publish to Edge Add-ons
+        if: inputs.publish_edge
+        uses: Heyooo-Inc/edge-addons-upload@v1
+        with:
+          product-id: ${{ secrets.EDGE_PRODUCT_ID }}
+          client-id: ${{ secrets.EDGE_CLIENT_ID }}
+          client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+          access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
+          zip-file-path: ${{ inputs.edge_zip_path }}
+          publish: true
+        continue-on-error: true
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: "${{ inputs.extension_name }} v${{ steps.version.outputs.version }}"
+          body: |
+            **Version ${{ steps.version.outputs.version }}**
+
+            Published to:
+            - ✅ Chrome Web Store
+            - ✅ Firefox Add-ons
+            - ✅ Edge Add-ons
+
+            See CHANGELOG.md for details.
+          draft: false
+          prerelease: false
+        continue-on-error: true
+
+      - name: Print Publishing Summary
+        run: |
+          echo "## Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Extension**: ${{ inputs.extension_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Stores Published To**:" >> $GITHUB_STEP_SUMMARY
+          echo "- Chrome Web Store: ${{ inputs.publish_chrome && '✅' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Firefox Add-ons: ${{ inputs.publish_firefox && '✅' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Edge Add-ons: ${{ inputs.publish_edge && '✅' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY
