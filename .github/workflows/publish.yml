@@ -93,7 +93,8 @@ jobs:
             --api-key=${{ secrets.FIREFOX_API_KEY }} \
             --api-secret=${{ secrets.FIREFOX_API_SECRET }} \
             --source-dir ${{ inputs.firefox_zip_path }} \
-            --channel listed
+            --channel listed \
+            --amo-metadata=amo-metadata.json
         env:
           FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
           FIREFOX_API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
