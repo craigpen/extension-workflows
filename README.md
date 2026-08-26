@@ -1,19 +1,19 @@
 # Extension Workflows
 
-Reusable GitHub Actions workflows for automating browser extension publishing to Chrome Web Store, Firefox Add-ons, and Microsoft Edge Add-ons.
+Internal reusable GitHub Actions workflow for automating browser extension publishing to Chrome Web Store, Firefox Add-ons, and Microsoft Edge Add-ons.
+
+Used by: Download Nexus, Tab Lifecycle Manager, and future extensions.
 
 **One workflow. Three app stores. Zero manual uploads.**
 
 ## Quick Start
 
-### For an Existing Extension
-
-1. **[Get credentials](./docs/CREDENTIALS.md)** from each app store (one-time setup)
-2. **[Set up secrets](./docs/SETUP.md)** in your GitHub repository
+1. **[Get credentials](./docs/CREDENTIALS.md)** from each app store (one-time per extension)
+2. **[Set up secrets](./docs/SETUP.md)** in your extension's GitHub repository
 3. **Add workflow** to your extension repo (`.github/workflows/publish.yml`)
 4. **Tag and push**: `npm version patch && git push --tags`
 
-See [Usage Example](./docs/USAGE.md) for Download Nexus.
+See [Usage Example](./docs/USAGE.md) for Download Nexus integration.
 
 ---
 
@@ -29,6 +29,8 @@ When you push a version tag (`v1.0.0`), the workflow automatically:
 ✅ Posts a summary with links  
 
 All in one action. No manual uploads. No FTP. No web dashboard clicks.
+
+**Note:** This workflow publishes **code/versions only**. Store listing metadata (name, description, screenshots, category) must be updated manually in each store's developer dashboard.
 
 ---
 
@@ -112,7 +114,7 @@ jobs:
 ### For This Repo
 
 - Separate GitHub repository (`extension-workflows`)
-- This repo is public (so your extension repos can reference it)
+- Extension repos reference it via: `uses: username/extension-workflows/.github/workflows/publish.yml@main`
 
 ---
 
@@ -264,19 +266,13 @@ You'll see updates in each store's developer dashboard as they process your subm
 
 ---
 
-## Contributing
+## Improving the Workflow
 
-Found an issue? Want to improve the workflow?
+Need to update the workflow? Add support for a new store? Improve the docs?
 
-- Check existing [docs](./docs/)
-- Test locally with an extension before proposing changes
-- Update documentation when adding features
-
----
-
-## License
-
-MIT - Feel free to fork and use for your own extensions.
+- Test changes locally with an extension first
+- Update docs when adding features or changing behavior
+- Keep it simple—this is internal infrastructure
 
 ---
 
@@ -284,10 +280,8 @@ MIT - Feel free to fork and use for your own extensions.
 
 👉 **First time?** Start with [CREDENTIALS.md](./docs/CREDENTIALS.md)  
 👉 **Setting up an extension?** Read [SETUP.md](./docs/SETUP.md)  
-👉 **Want a concrete example?** See [USAGE.md](./docs/USAGE.md) (Download Nexus)  
+👉 **Want a concrete example?** See [USAGE.md](./docs/USAGE.md)  
 
 ---
 
-**Questions?** Create an issue or check the docs.
-
-Made to automate extension publishing so you can focus on building great extensions. ✨
+**Questions?** Check the docs or review the workflow definition in `.github/workflows/publish.yml`.
