@@ -72,36 +72,52 @@ jobs:
 
       - name: Publish to Chrome Web Store
         if: inputs.publish_chrome
-        uses: wdzeng/chrome-extension-upload@v1
-        with:
-          file-path: ${{ inputs.chrome_zip_path }}
-          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-          client-id: ${{ secrets.CHROME_CLIENT_ID }}
-          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
-          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          publish: true
+        run: |
+          npx chrome-webstore-upload-cli upload \
+            --source ${{ inputs.chrome_zip_path }} \
+            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+          npx chrome-webstore-upload-cli publish \
+            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+        env:
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
         continue-on-error: true
 
       - name: Publish to Firefox Add-ons
         if: inputs.publish_firefox
-        uses: trmcnvn/firefox-addon@v1
-        with:
-          addon-guid: ${{ secrets.FIREFOX_ADDON_GUID }}
-          zip-file: ${{ inputs.firefox_zip_path }}
-          api-key: ${{ secrets.FIREFOX_API_KEY }}
-          api-secret: ${{ secrets.FIREFOX_API_SECRET }}
+        run: |
+          npx web-ext sign \
+            --api-key=${{ secrets.FIREFOX_API_KEY }} \
+            --api-secret=${{ secrets.FIREFOX_API_SECRET }} \
+            --source-dir ${{ inputs.firefox_zip_path }}
+        env:
+          FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+          FIREFOX_API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
         continue-on-error: true
 
       - name: Publish to Edge Add-ons
         if: inputs.publish_edge
-        uses: Heyooo-Inc/edge-addons-upload@v1
-        with:
-          product-id: ${{ secrets.EDGE_PRODUCT_ID }}
-          client-id: ${{ secrets.EDGE_CLIENT_ID }}
-          client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-          access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
-          zip-file-path: ${{ inputs.edge_zip_path }}
-          publish: true
+        run: |
+          npm install -g edge-addons-upload-cli
+          edge-addons-upload-cli upload \
+            --zip-file-path ${{ inputs.edge_zip_path }} \
+            --product-id ${{ secrets.EDGE_PRODUCT_ID }} \
+            --client-id ${{ secrets.EDGE_CLIENT_ID }} \
+            --client-secret ${{ secrets.EDGE_CLIENT_SECRET }} \
+            --access-token-url ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
+          edge-addons-upload-cli publish \
+            --product-id ${{ secrets.EDGE_PRODUCT_ID }} \
+            --client-id ${{ secrets.EDGE_CLIENT_ID }} \
+            --client-secret ${{ secrets.EDGE_CLIENT_SECRET }} \
+            --access-token-url ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
         continue-on-error: true
 
       - name: Create GitHub Release
